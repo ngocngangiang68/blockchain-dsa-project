@@ -1,0 +1,7 @@
+__pycache__/ #thu muc python tu tao khi chay code
+*.pyc #bytecode python
+.idea/ #cauhinhcanhan
+venv/ #moi truong &env
+.env/
+.DS_Store #file rac &7
+Thumbs.db
