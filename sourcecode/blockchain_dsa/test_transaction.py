@@ -5,8 +5,10 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import time# dung do tg thuc thi
-from transaction import Transaction #lay lop Transaction de tao doi tuong giao dich
-from utils import generate_mock_transactions, compute_hash #lay ham tao du lieu mau va ham bam de kiem tra
+from sourcecode.blockchain_dsa.transaction import Transaction
+#lay lop Transaction de tao doi tuong giao dich
+from sourcecode.blockchain_dsa.utils import generate_mock_transactions, compute_hash
+ #lay ham tao du lieu mau va ham bam de kiem tra
 
 
 def test_nhiem_vu_1():
