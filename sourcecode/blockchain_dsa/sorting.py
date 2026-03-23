@@ -1,29 +1,16 @@
-def quick_sort_transactions(arr):
+def sort_transactions_for_block(arr):
     """
-    Thuật toán Quick Sort (Sắp xếp nhanh).
-    Nhiệm vụ: Sắp xếp danh sách giao dịch theo phí (fee) từ CAO xuống THẤP.
+    Hàm sắp xếp toàn bộ giao dịch trong Mempool để chuẩn bị đóng gói vào Block.
     """
-    # 1. ĐIỀU KIỆN DỪNG:
-    # Nếu danh sách chỉ có 1 giao dịch hoặc rỗng, thì không cần sắp xếp nữa, trả về luôn.
-    if len(arr) <= 1:
-        return arr
 
-    # 2. CHỌN ĐIỂM CHỐT (Pivot):
-    # Lấy giao dịch nằm ở vị trí chính giữa danh sách làm mốc để so sánh.
-    pivot = arr[len(arr) // 2]
-
-    # 3. PHÂN CHIA DANH SÁCH (Partitioning):
-    # Tạo 3 danh sách trống để chứa các giao dịch sau khi so sánh với điểm chốt.
-    # Danh sách LEFT: Chứa các giao dịch có phí LỚN HƠN phí của điểm chốt.
-    left = [tx for tx in arr if tx.fee > pivot.fee]
-
-    # Danh sách MIDDLE: Chứa các giao dịch có phí BẰNG với phí của điểm chốt.
-    middle = [tx for tx in arr if tx.fee == pivot.fee]
-
-    # Danh sách RIGHT: Chứa các giao dịch có phí NHỎ HƠN phí của điểm chốt.
-    right = [tx for tx in arr if tx.fee < pivot.fee]
-
-    # 4. ĐỆ QUY VÀ GHÉP NỐI:
-    # Tiếp tục lặp lại thuật toán này cho mảng left và right.
-    # Sau đó ghép 3 mảng lại với nhau thành một danh sách hoàn chỉnh đã sắp xếp.
-    return quick_sort_transactions(left) + middle + quick_sort_transactions(right)
+    # Sử dụng hàm .sort() mặc định của Python (thuật toán lõi là Timsort).
+    # Hàm chạy trực tiếp trên mảng gốc (In-place), không tốn thêm dung lượng RAM.Có tính ổn định, không làm xáo trộn các giao dịch bị trùng phí.
+    """
+    Giải thích tham số key=lambda:
+    Lambda là một hàm ẩn danh dùng để chỉ định tiêu chí sắp xếp.
+    Mình truyền vào một tuple gồm 2 điều kiện: (-tx.fee, tx.timestamp)
+     Điều kiện 1 (-tx.fee): Dấu trừ (-) giúp sắp xếp mức Phí từ CAO XUỐNG THẤP.
+     Điều kiện 2 (tx.timestamp): Nếu 2 giao dịch có phí bằng nhau, máy tính tự động
+    nhìn sang điều kiện 2 để xếp Thời gian từ CŨ ĐẾN MỚI (ai tới trước được ưu tiên).
+    """
+    arr.sort(key=lambda tx: (-tx.fee, tx.timestamp))

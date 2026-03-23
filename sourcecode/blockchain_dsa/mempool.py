@@ -1,5 +1,5 @@
-# Import hàm thuật toán sắp xếp từ file sorting.py
-from sourcecode.blockchain_dsa.sorting import quick_sort_transactions
+# Import hàm sắp xếp từ file sorting.py nằm ngay cạnh nó
+from .sorting import sort_transactions_for_block
 
 class Mempool:
     """
@@ -18,18 +18,13 @@ class Mempool:
         self.transactions.extend(tx_list)
 
     def sort_by_fee(self):
-        """
-        Hàm thực hiện việc sắp xếp.
-        Gọi thuật toán Quick Sort ở file sorting.py,sắp xếp danh sách hiện tại và lưu đè lại vào phòng chờ.
-        """
-        self.transactions = quick_sort_transactions(self.transactions)
+        # Gọi "máy sắp xếp" hoạt động để xếp hàng lại toàn bộ giao dịch trong phòng chờ
+        sort_transactions_for_block(self.transactions)
 
-    def get_top_transactions(self, limit=10):
-        """
-        Hàm lấy ra những giao dịch VIP (phí cao nhất).
-        - limit=10: Nghĩa là mặc định sẽ lấy 10 giao dịch đứng đầu.
-        - Cắt danh sách từ vị trí 0 đến vị trí 'limit'.
-        """
+    def get_top_transactions(self, limit=4000):
+        # Hàm cắt danh sách để lấy số lượng giao dịch đưa vào Block.
+        # Tham số limit=4000 nghĩa là mặc định sẽ lấy 4000 người đứng đầu hàng.
+        # Cú pháp [:limit] là lệnh cắt (slice) của Python, lấy từ vị trí 0 đến 4000.
         return self.transactions[:limit]
 
     def __len__(self):
