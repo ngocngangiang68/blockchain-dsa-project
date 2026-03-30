@@ -1,20 +1,24 @@
 import unittest
 import time
-from sourcecode.blockchain_dsa.utils import generate_mock_transactions
-from sourcecode.blockchain_dsa.mempool import Mempool
+import random
 from sourcecode.blockchain_dsa.block import Block
+from sourcecode.blockchain_dsa.transaction import Transaction
 
 class TestSortView(unittest.TestCase):
     def setUp(self):
-        # Thiết lập môi trường kiểm thử tuân thủ chặt chẽ Data Pipeline của hệ thống
-        # Giả lập luồng truyền dữ liệu: Transaction -> Mempool -> Block
-        mock_data = generate_mock_transactions(10000)
-        mempool = Mempool()
-        mempool.add_transactions_bulk(mock_data)
-        mempool.sort_by_fee()
+        # Tạo nhanh 4000 giao dịch với fee và timestamp ngẫu nhiên để test hàm sort
+        # Không dùng Mempool ở đây để đảm bảo đây là Unit Test độc lập của Module 3
+        mock_txs = []
+        for i in range(4000):
+            tx = Transaction(
+                sender=f"S{i}", 
+                receiver=f"R{i}", 
+                amount=random.uniform(1, 100), 
+                fee=random.uniform(0.001, 0.05)
+            )
+            mock_txs.append(tx)
         
-        # Khởi tạo đối tượng Block với 4000 giao dịch đã qua xử lý tại Mempool
-        self.block = Block(mempool.get_top_transactions(4000))
+        self.block = Block(mock_txs)
 
     def test_view_performance_and_logic(self):
         print("\n--- TEST THỰC NGHIỆM: HIỆU NĂNG 4 CHẾ ĐỘ VIEW TRONG BLOCK ---")
