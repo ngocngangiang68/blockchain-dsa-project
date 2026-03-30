@@ -1,14 +1,13 @@
 import unittest
 import time
-from sourcecode.blockchain_dsa.block import Block
-from sourcecode.blockchain_dsa.transaction import Transaction
+# Đã tối ưu: Import thẳng từ module gốc thông qua __init__.py
+from sourcecode.blockchain_dsa import Block, Transaction
 
 class TestBlockCreation(unittest.TestCase):
     def test_block_initialization(self):
         print("\n--- TEST THỰC NGHIỆM: KHỞI TẠO BLOCK ---")
         
         # Chỉ tạo mock 4000 giao dịch cục bộ để Unit Test riêng cho Block 
-        # (Không gọi lại logic Mempool của module 2 để tránh over-test)
         mock_4000_txs = [
             Transaction(f"Sender{i}", f"Receiver{i}", 10.0, 0.01) 
             for i in range(4000)

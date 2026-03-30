@@ -1,13 +1,12 @@
 import unittest
 import time
 import random
-from sourcecode.blockchain_dsa.block import Block
-from sourcecode.blockchain_dsa.transaction import Transaction
+# Đã tối ưu: Import thẳng từ module gốc thông qua __init__.py
+from sourcecode.blockchain_dsa import Block, Transaction
 
 class TestSortView(unittest.TestCase):
     def setUp(self):
         # Tạo nhanh 4000 giao dịch với fee và timestamp ngẫu nhiên để test hàm sort
-        # Không dùng Mempool ở đây để đảm bảo đây là Unit Test độc lập của Module 3
         mock_txs = []
         for i in range(4000):
             tx = Transaction(
@@ -37,7 +36,6 @@ class TestSortView(unittest.TestCase):
             duration = time.perf_counter() - start
             
             print(f"[{name}]: {duration:.6f}s")
-            # Đảm bảo các hàm view chỉ sắp xếp hiển thị, không làm mất mát dữ liệu gốc (đủ 4000)
             self.assertEqual(len(result), 4000)
 
 if __name__ == '__main__':
