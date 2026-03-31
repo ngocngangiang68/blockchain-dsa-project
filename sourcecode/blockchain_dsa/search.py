@@ -49,7 +49,7 @@ def binary_search(transactions, target_txid):
 
     return -1  # không tìm thấy
 
-
+#
 def prepare_block_for_search(block):
     """
     Hàm chuẩn bị dữ liệu từ Block để phục vụ tìm kiếm.
