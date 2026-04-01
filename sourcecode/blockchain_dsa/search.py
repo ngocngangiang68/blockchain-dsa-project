@@ -64,11 +64,11 @@ def prepare_block_for_search(block):
 
     transactions = block.transactions  # lấy dữ liệu từ Block
 
-    start = time.time()  # bắt đầu đo thời gian
+    start = time.perf_counter()  # bắt đầu đo thời gian
 
     sorted_transactions = sort_transactions_by_id(transactions)
 
-    end = time.time()  # kết thúc
+    end = time.perf_counter()  # kết thúc
 
     sort_time = end - start  # thời gian thực thi
 

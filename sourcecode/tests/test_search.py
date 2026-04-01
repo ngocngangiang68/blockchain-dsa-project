@@ -1,13 +1,8 @@
 # tests/test_search.py
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from blockchain_dsa.transaction import Transaction
-from blockchain_dsa.mempool import Mempool
-from blockchain_dsa.block import Block
-from blockchain_dsa.search import search_transaction
-
+try:
+    from blockchain_dsa import Transaction, Mempool, Block, search_transaction
+except ModuleNotFoundError:
+    from sourcecode.blockchain_dsa import Transaction, Mempool, Block, search_transaction
 ##
 def test_search_found():
     """

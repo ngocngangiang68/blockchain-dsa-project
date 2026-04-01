@@ -1,11 +1,10 @@
 # tests/test_sortid.py
-import sys
-import os
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from blockchain_dsa.transaction import Transaction
-from blockchain_dsa.block import Block
-from blockchain_dsa.search import prepare_block_for_search
+try:
+    # chạy khi đứng trong sourcecode
+    from blockchain_dsa import Transaction, Mempool, Block, prepare_block_for_search
+except ModuleNotFoundError:
+    # chạy khi đứng ở root project
+    from sourcecode.blockchain_dsa import Transaction, Mempool, Block, prepare_block_for_search
 
 ##
 def test_sort_id():
@@ -14,31 +13,40 @@ def test_sort_id():
 
     Mục tiêu:
     - Kiểm tra xem danh sách sau khi sort có đúng thứ tự không
-    """
+    Test sắp xếp TXID theo luồng:
+        mempool → block → search
+        """
 
-    # Tạo dữ liệu giả
+    # 1. Tạo mempool
+    mempool = Mempool()
+
+    # 2. Tạo dữ liệu
     txs = [
         Transaction("A", "B", 10, 0.1),
         Transaction("C", "D", 20, 0.2),
         Transaction("E", "F", 30, 0.3),
     ]
 
-    # Tạo Block
-    block = Block(txs)
+    # 3. Đưa vào mempool
+    mempool.add_transactions_bulk(txs)
 
-    # Gọi hàm sort
+    # 4. Sort theo fee (logic blockchain)
+    mempool.sort_by_fee()
+
+    # 5. Tạo block
+    block = Block.create_from_mempool(mempool)
+
+    # 6. Sort theo TXID
     sorted_txs, sort_time = prepare_block_for_search(block)
 
-    # Kiểm tra số lượng không đổi
-    assert len(sorted_txs) == len(txs)
+    # 7. Kiểm tra số lượng
+    assert len(sorted_txs) == len(block.transactions)
 
-    # Lấy TXID
+    # 8. Kiểm tra sort
     txids = [tx.txid for tx in sorted_txs]
-
-    # Kiểm tra đã được sắp xếp
     assert txids == sorted(txids)
 
-    # Kiểm tra từng cặp (bonus)
+    # 9. Kiểm tra từng cặp
     for i in range(len(txids) - 1):
         assert txids[i] <= txids[i + 1]
 
