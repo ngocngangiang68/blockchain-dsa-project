@@ -1,65 +1,81 @@
-# tests/test_search.py
-try:
-    from blockchain_dsa import Transaction, Mempool, Block, search_transaction
-except ModuleNotFoundError:
-    from sourcecode.blockchain_dsa import Transaction, Mempool, Block, search_transaction
-##
+"""
+Test Binary Search trên TXID
+
+Bao gồm:
+1. Trường hợp tìm thấy
+2. Trường hợp không tìm thấy
+3. Đo thời gian sort và search
+"""
+
+import time
+from blockchain_dsa.utils import generate_mock_transactions
+from blockchain_dsa.block import Block
+from blockchain_dsa.search import sort_transactions_by_txid, binary_search_txid
+
 def test_search_found():
-    """
-    Test trường hợp tìm thấy TXID
-    """
+    # Tạo dữ liệu giả
+    txs = generate_mock_transactions(2000)
 
-    # Tạo mempool
-    mempool = Mempool()
+    # Tạo block (block đã có sẵn, không sửa)
+    block = Block(txs)
 
-    # Tạo dữ liệu giao dịch giả
-    txs = [
-        Transaction("A", "B", 10, 0.5),
-        Transaction("C", "D", 20, 0.2),
-        Transaction("E", "F", 30, 0.8),
-    ]
+    # Lấy danh sách transaction từ block
+    transactions = block.transactions
 
-    # Đưa vào mempool
-    mempool.add_transactions_bulk(txs)
 
-    # Sắp xếp theo phí (logic blockchain)
-    mempool.sort_by_fee()
+    # BƯỚC 1: SORT THEO TXID
 
-    # Tạo block từ mempool
-    block = Block.create_from_mempool(mempool)
+    start_sort = time.time()
 
-    # Lấy 1 TXID chắc chắn tồn tại
-    target = block.transactions[0].txid
+    sorted_txs = sort_transactions_by_txid(transactions)
 
-    # Gọi search
-    index, sort_time, search_time = search_transaction(block, target)
+    end_sort = time.time()
 
-    print("Sort time:", sort_time)
-    print("Search time:", search_time)
+    # Lấy một TXID có thật trong danh sách
+    target_txid = sorted_txs[500].txid
 
-    # Kiểm tra tìm thấy
-    assert index != -1
+    # BƯỚC 2: BINARY SEARCH
+
+    start_search = time.time()
+
+    result = binary_search_txid(sorted_txs, target_txid)
+
+    end_search = time.time()
+
+    print("[SEARCH FOUND]")
+    print("TXID cần tìm:", target_txid[:10], "...")
+    print("Kết quả:", result)
+    print("Thời gian sort:", end_sort - start_sort)
+    print("Thời gian search:", end_search - start_search)
+
+    # Kiểm tra kết quả đúng
+    assert result is not None
+    assert result.txid == target_txid
 
 
 def test_search_not_found():
-    """
-    Test trường hợp KHÔNG tìm thấy TXID
-    """
+    # Tạo dữ liệu
+    txs = generate_mock_transactions(2000)
+    block = Block(txs)
 
-    mempool = Mempool()
+    transactions = block.transactions
 
-    txs = [
-        Transaction("A", "B", 10, 0.5),
-        Transaction("C", "D", 20, 0.2),
-    ]
+    # Sort trước khi search
+    sorted_txs = sort_transactions_by_txid(transactions)
 
-    mempool.add_transactions_bulk(txs)
-    mempool.sort_by_fee()
+    # TXID giả (không tồn tại)
+    fake_txid = "0" * 64
 
-    block = Block.create_from_mempool(mempool)
+    start = time.time()
 
-    # TXID giả
-    index, _, _ = search_transaction(block, "fake_txid_123")
+    result = binary_search_txid(sorted_txs, fake_txid)
 
-    # Kiểm tra không tìm thấy
-    assert index == -1
+    end = time.time()
+
+    print("[SEARCH NOT FOUND]")
+    print("TXID giả:", fake_txid)
+    print("Kết quả:", result)
+    print("Thời gian search:", end - start)
+
+    # Kết quả phải là None
+    assert result is None

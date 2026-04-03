@@ -1,53 +1,35 @@
-# tests/test_sortid.py
-try:
-    # chạy khi đứng trong sourcecode
-    from blockchain_dsa import Transaction, Mempool, Block, prepare_block_for_search
-except ModuleNotFoundError:
-    # chạy khi đứng ở root project
-    from sourcecode.blockchain_dsa import Transaction, Mempool, Block, prepare_block_for_search
+"""
+Test việc sắp xếp transaction theo TXID
 
-##
-def test_sort_id():
-    """
-    Test chức năng sắp xếp theo TXID
+Mục tiêu:
+- Kiểm tra sắp xếp đúng
+- Đo thời gian thực hiện
+"""
 
-    Mục tiêu:
-    - Kiểm tra xem danh sách sau khi sort có đúng thứ tự không
-    Test sắp xếp TXID theo luồng:
-        mempool → block → search
-        """
+import time
+from blockchain_dsa.utils import generate_mock_transactions
+from blockchain_dsa.search import sort_transactions_by_txid
 
-    # 1. Tạo mempool
-    mempool = Mempool()
 
-    # 2. Tạo dữ liệu
-    txs = [
-        Transaction("A", "B", 10, 0.1),
-        Transaction("C", "D", 20, 0.2),
-        Transaction("E", "F", 30, 0.3),
-    ]
+def test_sort_txid():
+    # Tạo 1000 transaction giả lập
+    txs = generate_mock_transactions(1000)
 
-    # 3. Đưa vào mempool
-    mempool.add_transactions_bulk(txs)
+    # Bắt đầu đo thời gian
+    start = time.time()
 
-    # 4. Sort theo fee (logic blockchain)
-    mempool.sort_by_fee()
+    # Gọi hàm sắp xếp
+    sorted_txs = sort_transactions_by_txid(txs)
 
-    # 5. Tạo block
-    block = Block.create_from_mempool(mempool)
+    # Kết thúc đo thời gian
+    end = time.time()
 
-    # 6. Sort theo TXID
-    sorted_txs, sort_time = prepare_block_for_search(block)
-
-    # 7. Kiểm tra số lượng
-    assert len(sorted_txs) == len(block.transactions)
-
-    # 8. Kiểm tra sort
+    # Lấy danh sách TXID sau khi sort
     txids = [tx.txid for tx in sorted_txs]
+
+    # Kiểm tra xem danh sách đã được sắp xếp đúng chưa
     assert txids == sorted(txids)
 
-    # 9. Kiểm tra từng cặp
-    for i in range(len(txids) - 1):
-        assert txids[i] <= txids[i + 1]
-
-    print("Sort time:", sort_time)
+    print("[TEST SORT TXID]")
+    print("5 TXID đầu:", txids[:5])
+    print("Thời gian sắp xếp:", end - start)
