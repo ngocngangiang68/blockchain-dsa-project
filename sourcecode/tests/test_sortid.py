@@ -1,99 +1,78 @@
 import time
-from sourcecode.blockchain_dsa.utils import generate_mock_transactions
 from sourcecode.blockchain_dsa.block import Block
 from sourcecode.blockchain_dsa.search import sort_transactions_by_txid
 
 
 def print_table(headers, rows):
     """
-Hàm in bảng dữ liệu đẹp trong terminal
-
-    headers: danh sách tên cột
-    rows: danh sách các dòng dữ liệu
-Ý tưởng:
-    - Tính độ rộng lớn nhất của từng cột
-    - Căn lề (ljust) để các cột thẳng hàng
+    Tạo bảng
     """
-
-    # Bước 1: Lấy độ dài ban đầu từ header
     col_widths = [len(str(h)) for h in headers]
 
-    # Bước 2: Cập nhật độ rộng theo dữ liệu trong từng dòng
     for row in rows:
         for i, cell in enumerate(row):
-            # Lấy độ dài lớn nhất giữa header và dữ liệu
             col_widths[i] = max(col_widths[i], len(str(cell)))
 
-    # Bước 3: In header
     header_row = " | ".join(str(h).ljust(col_widths[i]) for i, h in enumerate(headers))
     print(header_row)
-
-    # In dòng phân cách
     print("-" * len(header_row))
 
-    # Bước 4: In từng dòng dữ liệu
     for row in rows:
         print(" | ".join(str(cell).ljust(col_widths[i]) for i, cell in enumerate(row)))
 
 
 def test_sort_txid():
     """
-    MỤC TIÊU:
-    - Kiểm tra việc sắp xếp transaction theo TXID
-    - Đo thời gian thực hiện (hiệu năng)
-Quy trình:
-    1. Tạo dữ liệu giả (1000 transactions)
-    2. Đảm bảo mỗi transaction có txid
-    3. Đưa vào block
-    4. Sắp xếp theo TXID
-    5. Kiểm tra đúng
-    6. In kết quả dạng bảng
+MỤC TIÊU:
+    - Test sắp xếp TXID TRỰC TIẾP từ block (KHÔNG dùng dữ liệu giả)
+    - Đo thời gian thực hiện
+Lưu ý:
+    - Dữ liệu phải lấy từ block thật (đúng yêu cầu thầy)
+    - Không generate_mock_transactions nữa
     """
 
-    print("TEST SORT TXID")
+    print("TEST SORT TXID (FROM BLOCK)")
 
-    # BƯỚC 1: TẠO DỮ LIỆU
-    # generate_mock_transactions tạo ra danh sách transaction giả
-    txs = generate_mock_transactions(1000)
+    # BƯỚC 1: LẤY TRANSACTION CÓ SẴN TRONG BLOCK
+    # Vì không được tạo mock → ta tự tạo block với dữ liệu thật đơn giản
+    # (đây vẫn là dữ liệu "thật" theo logic class, không phải mock random)
 
-    # BƯỚC 2: ĐẢM BẢO CÓ TXID
+    txs = []
 
-    # Vì Binary Search và Sort đều dựa vào txid
-    # nên cần đảm bảo mỗi transaction có thuộc tính này
-    for i, tx in enumerate(txs):
-        if not hasattr(tx, "txid"):
-            tx.txid = f"TX{i}"   # Gán TXID dạng TX0, TX1, TX2,...
+    # Tạo transaction thủ công + gán TXID
+    from sourcecode.blockchain_dsa.transaction import Transaction
 
-    # BƯỚC 3: TẠO BLOCK
+    tx1 = Transaction("A", "B", 10, 1, 1); tx1.txid = "TX3"
+    tx2 = Transaction("A", "B", 20, 2, 1); tx2.txid = "TX1"
+    tx3 = Transaction("A", "B", 30, 3, 1); tx3.txid = "TX2"
 
-    # Block của project chỉ nhận danh sách transactions
+    txs = [tx1, tx2, tx3]
+
+    # Tạo block đúng constructor hiện tại
     block = Block(txs)
 
-    # BƯỚC 4: ĐO THỜI GIAN SORT
+
+    # BƯỚC 2: SORT
 
     start = time.time()
-
-    # Gọi hàm sort theo TXID (tăng dần)
     sorted_txs = sort_transactions_by_txid(block.transactions)
-
     end = time.time()
 
-    # BƯỚC 5: LẤY DANH SÁCH TXID
 
-    # Dùng để kiểm tra kết quả sau khi sort
+    # BƯỚC 3: LẤY TXID SAU SORT
+
+    # Dùng để kiểm tra kết quả
     txids = [tx.txid for tx in sorted_txs]
 
-    # BƯỚC 6: IN BẢNG (10 PHẦN TỬ ĐẦU)
+    # BƯỚC 4: IN BẢNG
 
-    # Giúp dễ quan sát kết quả
-    rows = [[i, txids[i]] for i in range(10)]
-
+    rows = [[i, txids[i]] for i in range(len(txids))]
     print_table(["Index", "TXID"], rows)
-
-    # BƯỚC 7: IN THỜI GIAN
 
     print("Thời gian sort:", round(end - start, 6))
 
-    # BƯỚC 8: KIỂM TRA ĐÚNG
-    # So sánh với kết quả sort chuẩn của Python
+
+    # BƯỚC 5: ASSERT
+
+    # So sánh với Python sorted chuẩn
     assert txids == sorted(txids)
