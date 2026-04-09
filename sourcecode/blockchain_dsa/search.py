@@ -105,6 +105,6 @@ def prepare_block_for_search(block):
 def binary_search(transactions, target_txid):
     """
     Wrapper cho binary_search_txid
-    (phục vụ import từ __init__.py)
+
     """
     return binary_search_txid(transactions, target_txid)
