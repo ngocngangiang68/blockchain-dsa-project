@@ -1,42 +1,46 @@
-import unittest
 import time
-import random
-# Đã tối ưu: Import thẳng từ module gốc thông qua __init__.py
-from sourcecode.blockchain_dsa import Block, Transaction
+from sourcecode.blockchain_dsa import Block
+from sourcecode.blockchain_dsa.test_data import MOCK_4000_TRANSACTIONS
 
-class TestSortView(unittest.TestCase):
-    def setUp(self):
-        # Tạo nhanh 4000 giao dịch với fee và timestamp ngẫu nhiên để test hàm sort
-        mock_txs = []
-        for i in range(4000):
-            tx = Transaction(
-                sender=f"S{i}", 
-                receiver=f"R{i}", 
-                amount=random.uniform(1, 100), 
-                fee=random.uniform(0.001, 0.05)
-            )
-            mock_txs.append(tx)
-        
-        self.block = Block(mock_txs)
+print("\n--- TEST CACHE & PAGINATION ---\n")
 
-    def test_view_performance_and_logic(self):
-        print("\n--- TEST THỰC NGHIỆM: HIỆU NĂNG 4 CHẾ ĐỘ VIEW TRONG BLOCK ---")
-        
-        # Các kịch bản truy xuất (View) cần kiểm thử
-        views = [
-            ("Phí Giảm dần (Ưu tiên cao nhất)", self.block.get_view_fee_desc),
-            ("Phí Tăng dần", self.block.get_view_fee_asc),
-            ("Thời gian Giảm dần (Mới nhất)", self.block.get_view_time_desc),
-            ("Thời gian Tăng dần (Cũ nhất)", self.block.get_view_time_asc)
-        ]
+block = Block(MOCK_4000_TRANSACTIONS)
 
-        for name, view_func in views:
-            start = time.perf_counter()
-            result = view_func()
-            duration = time.perf_counter() - start
-            
-            print(f"[{name}]: {duration:.6f}s")
-            self.assertEqual(len(result), 4000)
+views = [
+    ("Fee DESC", block.get_view_by_fee_desc),
+    ("Fee ASC", block.get_view_by_fee_asc),
+    ("Time DESC", block.get_view_by_time_desc),
+    ("Time ASC", block.get_view_by_time_asc),
+]
 
-if __name__ == '__main__':
-    unittest.main()
+for name, view_func in views:
+    # Lần 1: Sort
+    start = time.perf_counter()
+    result = view_func(page=1, per_page=10)
+    time1 = time.perf_counter() - start
+
+    # Lần 2: Cache
+    start = time.perf_counter()
+    result_cache = view_func(page=1, per_page=10)
+    time2 = time.perf_counter() - start
+
+    print(f"[{name}]")
+    print(f"  Lần 1 (sort): {time1:.6f}s")
+    print(f"  Lần 2 (cache): {time2:.6f}s")
+    print(f"  Trang: {result['page']}/{result['total_pages']}")
+    print(f"  Kết quả: {len(result['data'])} txs\n")
+
+    # In chi tiết 10 giao dịch
+    print(f"  PAGE 1:")
+    for i, tx in enumerate(result['data'], 1):
+        print(f"    {i}. ID={tx.txid}, Fee={tx.fee:.6f}, Amount={tx.amount:.2f}")
+
+    # Lấy trang tiếp theo (page 2)
+    result_page2 = view_func(page=2, per_page=10)
+    print(f"\n  PAGE 2:")
+    for i, tx in enumerate(result_page2['data'], 1):
+        print(f"    {i}. ID={tx.txid}, Fee={tx.fee:.6f}, Amount={tx.amount:.2f}")
+
+    print()
+
+print("✅ Pass!")

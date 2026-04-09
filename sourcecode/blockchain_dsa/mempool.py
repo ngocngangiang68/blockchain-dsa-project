@@ -1,4 +1,3 @@
-# Import hàm sắp xếp từ file sorting.py nằm ngay cạnh nó
 from .sorting import sort_transactions_for_block
 
 class Mempool:
@@ -18,8 +17,9 @@ class Mempool:
         self.transactions.extend(tx_list)
 
     def sort_by_fee(self):
-        # Gọi "máy sắp xếp" hoạt động để xếp hàng lại toàn bộ giao dịch trong phòng chờ
-        sort_transactions_for_block(self.transactions)
+        """Sắp xếp theo phí (cao → thấp), timestamp (cũ → mới)"""
+        # Dùng MergeSort (stable sort)
+        self.transactions = sort_transactions_for_block(self.transactions)
 
     def get_top_transactions(self, limit=4000):
         # Hàm cắt danh sách để lấy số lượng giao dịch đưa vào Block.
