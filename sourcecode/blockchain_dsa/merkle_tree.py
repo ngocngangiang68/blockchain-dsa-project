@@ -27,6 +27,7 @@ def compute_merkle_root(transactions):
 
 
 
+
 import hashlib
 
 class MerkleTree:

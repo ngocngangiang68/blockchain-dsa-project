@@ -24,6 +24,7 @@ class Blockchain:
                     return tx
         return None
 
+
     def __init__(self):
         self.chain = []
 

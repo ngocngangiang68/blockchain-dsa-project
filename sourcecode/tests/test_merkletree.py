@@ -6,6 +6,7 @@ def test_merkle_tree():
     # giả lập dữ liệu giao dịch
     transactions = [f"tx{i}" for i in range(4000)]
 
+
     # [1] Build Root
     start = time.time()
     tree = MerkleTree(transactions)

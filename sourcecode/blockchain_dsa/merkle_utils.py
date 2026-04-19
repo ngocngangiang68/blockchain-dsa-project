@@ -65,3 +65,4 @@ def verify_merkle_proof(txid, proof, merkle_root):
 
     # So sánh với Merkle Root
     return current == merkle_root
+
