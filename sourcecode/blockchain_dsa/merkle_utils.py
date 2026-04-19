@@ -1,4 +1,4 @@
-from sourcecode.blockchain_dsa.utils import compute_hash
+from .utils import compute_hash
 
 
 def get_merkle_proof(transactions, target_txid):
@@ -25,9 +25,43 @@ def get_merkle_proof(transactions, target_txid):
 
 
 def verify_merkle_proof(txid, proof, merkle_root):
+    """
+    Xác minh Merkle Proof:
+
+    - txid: hash của transaction ban đầu (leaf)
+    - proof: danh sách các tuple (hash_anh_em, vị_trí)
+        + hash_anh_em: hash của node "anh em"
+        + vị_trí: 'left' hoặc 'right'
+    - merkle_root: root cần verify
+
+    Ý tưởng:
+    - Bắt đầu từ txid
+    - Lần lượt hash với các node anh em theo đúng thứ tự
+    - Nếu kết quả cuối cùng == merkle_root → hợp lệ
+    """
+
+    # current sẽ đại diện cho hash đang được "leo lên cây"
     current = txid
+
+    # Gán hàm hash (giả sử compute_hash đã được định nghĩa)
     _hash = compute_hash
-    for h, pos in proof:
-        # Băm trực tiếp theo vị trí
-        current = _hash(current + h if pos == 'right' else h + current)
+
+    # Duyệt từng bước trong proof
+    for sibling_hash, position in proof:
+
+        """
+        Nếu sibling ở bên phải:
+            current = hash(current + sibling)
+
+        Nếu sibling ở bên trái:
+            current = hash(sibling + current)
+
+        Thứ tự rất quan trọng!
+        """
+        if position == 'right':
+            current = _hash(current + sibling_hash)
+        else:  # position == 'left'
+            current = _hash(sibling_hash + current)
+
+    # So sánh với Merkle Root
     return current == merkle_root

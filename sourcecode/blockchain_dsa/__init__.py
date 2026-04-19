@@ -6,11 +6,14 @@ from .sorting import quick_sort_transactions, merge_sort_transactions, sort_tran
 from .search import binary_search
 from .merkle_tree import compute_merkle_root
 from .utils import generate_mock_transactions, compute_hash
+from .blockchain import Blockchain
+from .merkle_tree import MerkleTree
 
 __all__ = [
     'Block',
     'Transaction',
     'Mempool',
+    'Blockchain',
     'quick_sort_transactions',
     'merge_sort_transactions',
     'sort_transactions_by_id',
