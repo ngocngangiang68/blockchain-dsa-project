@@ -1,6 +1,8 @@
 import time
+import random
 from sourcecode.blockchain_dsa import Block
 from sourcecode.blockchain_dsa.test_data import MOCK_4000_TRANSACTIONS
+random.seed(42)
 
 print("\n--- TEST CACHE & PAGINATION ---\n")
 
