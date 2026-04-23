@@ -1,3 +1,11 @@
+import hashlib# Thư viện cung cấp các thuật toán mã hóa (ở đây dùng SHA256)
+import random# Thư viện dùng để tạo dữ liệu ngẫu nhiên (tên, số tiền, phí)
+import string # Thư viện chứa các tập ký tự để tạo mã hậu tố cho địa chỉ ví
+import time # Thư viện dùng để quản lý và lấy mốc thời gian thực
+def compute_hash(data: str) -> str:
+    """Hàm thực hiện băm dữ liệu đầu vào bằng thuật toán SHA256.
+    Kết quả trả về một chuỗi ký tự dài 64 ký tự, đóng vai trò là mã định danh (TXID) duy nhất."""
+    return hashlib.sha256(data.encode()).hexdigest()
 def generate_mock_transactions(n=10000, base_timestamp=None):
     """THàm tạo ra danh sách 10.000 giao dịch mẫu để đưa vào Mempool.
     Giúp nhóm có tập dữ liệu lớn để kiểm tra hiệu năng sắp xếp và tìm kiếm."""
