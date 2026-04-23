@@ -48,15 +48,28 @@ def run_unified_tests():
     mempool = Mempool()
     mempool.add_transactions_bulk(MOCK_4000_TRANSACTIONS)
 
-    start_time = time.perf_counter()
+    # Đo thời gian sắp xếp Mempool
+    start_sort_mempool = time.perf_counter()
     mempool.sort_by_fee()  # Sắp xếp theo phí để lấy top
+    t_sort_mempool = time.perf_counter() - start_sort_mempool
+
     top_txs = mempool.get_top_transactions(4000)
+
+    # Đo thời gian khởi tạo và finalize block (Sắp xếp theo TXID nằm trong block.finalize)
+    start_time = time.perf_counter()
     block = Block(top_txs)
     block.finalize()
     duration = time.perf_counter() - start_time
 
     print(f" - Số lượng TX trong Block: {len(block.transactions)}")
     print(f" - Thời gian Init + Finalize (4000 TXs): {duration:.6f}s")
+
+    # --- ĐỐI CHIẾU ẢNH ---
+    print(
+        f" 👉 Đối chiếu Sắp xếp Mempool (< 0.05s): {t_sort_mempool:.6f}s -> {'✅ ĐẠT' if t_sort_mempool < 0.05 else '❌ CHƯA ĐẠT'}")
+    print(
+        f" 👉 Đối chiếu Sắp xếp trong Block (< 0.03s): {duration:.6f}s -> {'✅ ĐẠT' if duration < 0.03 else '❌ CHƯA ĐẠT'}")
+
     assert len(block.transactions) == 4000
     print(" => Kết quả: [PASS] Đóng gói Block thành công.")
 
@@ -75,21 +88,46 @@ def run_unified_tests():
     assert result_tx is not None and result_tx.txid == target_id
     print(f" - Kết quả: Tìm thấy đúng giao dịch.")
     print(f" - Thời gian tìm kiếm: {duration_search:.10f}s")
+
+    # --- ĐỐI CHIẾU ẢNH ---
+    print(
+        f" 👉 Đối chiếu Binary Search (< 0.0001s): {duration_search:.6f}s -> {'✅ ĐẠT' if duration_search < 0.0001 else '❌ CHƯA ĐẠT'}")
+
     print(" => Kết quả: [PASS] Binary Search hoạt động chính xác.")
 
     # -------------------------------------------------------------------------
     # 4. MERKLE TREE & PROOF (Từ test.proof.py)
     # -------------------------------------------------------------------------
     print("\n[PHẦN 4] KIỂM TRA MERKLE ROOT & BẰNG CHỨNG XÁC THỰC")
+
+    # Đo thời gian xây dựng Merkle Tree (Giả sử nằm trong block.merkle_root lần đầu)
+    start_merkle = time.perf_counter()
     root = block.merkle_root
+    t_merkle_tree = time.perf_counter() - start_merkle
+
     test_id = block.transactions[500].txid
 
-    # Tạo bằng chứng và xác minh
+    # Đo thời gian tạo Merkle Proof
+    start_proof = time.perf_counter()
     proof = get_merkle_proof(block.transactions, test_id)
+    t_create_proof = time.perf_counter() - start_proof
+
+    # Đo thời gian xác thực Merkle Proof
+    start_verify = time.perf_counter()
     is_valid = verify_merkle_proof(test_id, proof, root)
+    t_verify_proof = time.perf_counter() - start_verify
 
     print(f" - Merkle Root: {root}")
     print(f" - Xác minh Proof (Index 500): {'Thành công' if is_valid else 'Thất bại'}")
+
+    # --- ĐỐI CHIẾU ẢNH ---
+    print(
+        f" 👉 Đối chiếu Xây dựng Merkle Tree (< 0.01s): {t_merkle_tree:.6f}s -> {'✅ ĐẠT' if t_merkle_tree < 0.01 else '❌ CHƯA ĐẠT'}")
+    print(
+        f" 👉 Đối chiếu Tạo Merkle Proof (< 0.01s): {t_create_proof:.6f}s -> {'✅ ĐẠT' if t_create_proof < 0.01 else '❌ CHƯA ĐẠT'}")
+    print(
+        f" 👉 Đối chiếu Xác thực Merkle Proof (< 0.0001s): {t_verify_proof:.6f}s -> {'✅ ĐẠT' if t_verify_proof < 0.0001 else '❌ CHƯA ĐẠT'}")
+
     assert is_valid, "LỖI: Merkle Proof không hợp lệ!"
     print(" => Kết quả: [PASS] Hệ thống Merkle hoạt động đúng.")
 
@@ -113,7 +151,7 @@ def run_unified_tests():
 
     # --- PHẦN IN RA ĐỂ SO SÁNH ---
     print("\n👉 SO SÁNH DỮ LIỆU GIỮA 2 LẦN CHẠY:")
-    print(f"{'STT':<5} | {'TXID Lần 1 (Sắp xếp)':<35} | {'TXID Lần 2 (Từ Cache)':<35}")
+    print(f"{'STT':<5} | {'TXID Lần 1 (Sắp xếp)':dsc v<35} | {'TXID Lần 2 (Từ Cache)':<35}")
     print("-" * 80)
 
     for i in range(len(res1['data'])):
@@ -132,6 +170,7 @@ def run_unified_tests():
     assert t2 <= t1
     assert is_identical
     print(" => Kết quả: [PASS] Cache và View hoạt động tối ưu.")
+
 
 if __name__ == "__main__":
     try:
