@@ -151,7 +151,7 @@ def run_unified_tests():
 
     # --- PHẦN IN RA ĐỂ SO SÁNH ---
     print("\n👉 SO SÁNH DỮ LIỆU GIỮA 2 LẦN CHẠY:")
-    print(f"{'STT':<5} | {'TXID Lần 1 (Sắp xếp)':dsc v<35} | {'TXID Lần 2 (Từ Cache)':<35}")
+    print(f"{'STT':<5} | {'TXID Lần 1 (Sắp xếp)':<35} | {'TXID Lần 2 (Từ Cache)':<35}")
     print("-" * 80)
 
     for i in range(len(res1['data'])):
