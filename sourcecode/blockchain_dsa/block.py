@@ -1,16 +1,15 @@
-from sourcecode.blockchain_dsa.sorting import (
-    quick_sort_transactions,
-    merge_sort_transactions,
-    sort_transactions_by_id
-)
+from .sorting import quick_sort_transactions, merge_sort_transactions, sort_transactions_by_id
+from .utils import compute_hash
+from .merkle_tree import compute_merkle_root
+
 import time
 from sourcecode.blockchain_dsa.utils import compute_hash
 from sourcecode.blockchain_dsa.merkle_tree import compute_merkle_root
 class Block:
-    def __init__(self, transactions, prev_hash="0"):
+    def __init__(self, transactions, prev_hash="0", index=0):
         # ✓ Lưu trữ CỐ ĐỊNH theo ID (dùng MergeSort)
         self.transactions = sort_transactions_by_id(transactions.copy())
-
+        self.index = index
         self.prev_hash = prev_hash
         self.timestamp = time.time()
         self.merkle_root = None
