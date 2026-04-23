@@ -2,6 +2,10 @@ import time
 from sourcecode.blockchain_dsa import Block, Mempool
 from sourcecode.blockchain_dsa.test_data import MOCK_4000_TRANSACTIONS
 
+random.seed(42)  # Ghim seed để đảm bảo dữ liệu nhất quán
+import random as rnd_utils
+rnd_utils.seed(42)
+
 # Nạp Mempool
 mempool = Mempool()
 mempool.add_transactions_bulk(MOCK_4000_TRANSACTIONS)
