@@ -1,10 +1,13 @@
 import time
+import random
 import copy
 from sourcecode.blockchain_dsa.block import Block
 from sourcecode.blockchain_dsa.merkle_tree import compute_merkle_root
 from sourcecode.blockchain_dsa.test_data import MOCK_4000_TRANSACTIONS
 from sourcecode.blockchain_dsa.utils import compute_hash
 from sourcecode.blockchain_dsa.merkle_utils import get_merkle_proof, verify_merkle_proof
+
+random.seed(42) 
 
 # 1. Khởi tạo Block (Dữ liệu đã finalize và hash sẵn trong Block)
 block = Block(MOCK_4000_TRANSACTIONS)
