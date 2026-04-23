@@ -1,11 +1,4 @@
-import hashlib# Thư viện cung cấp các thuật toán mã hóa (ở đây dùng SHA256)
-import random# Thư viện dùng để tạo dữ liệu ngẫu nhiên (tên, số tiền, phí)
-import string # Thư viện chứa các tập ký tự để tạo mã hậu tố cho địa chỉ ví
-import time # Thư viện dùng để quản lý và lấy mốc thời gian thực
-
-compute_hash = lambda data: hashlib.sha256(data.encode()).hexdigest() #SHA256. Kết quả trả về một chuỗi ký tự dài 64 ký tự, đóng vai trò là mã định danh (TXID)
-
-def generate_mock_transactions(n=10000):
+def generate_mock_transactions(n=10000, base_timestamp=None):
     """THàm tạo ra danh sách 10.000 giao dịch mẫu để đưa vào Mempool.
     Giúp nhóm có tập dữ liệu lớn để kiểm tra hiệu năng sắp xếp và tìm kiếm."""
     from .transaction import Transaction
@@ -15,8 +8,10 @@ def generate_mock_transactions(n=10000):
     # Danh sách tên cơ sở để làm phong phú dữ liệu người dùng
     base_names = ["Alice", "Bob", "Charlie", "David", "Eve", "Ngoc Anh", "Gia Bao",
                   "Hoang", "Minh", "Phuong", "Lan", "Tu", "Khanh", "Vy", "Hien", "Giang"]
-    # Lấy mốc thời gian hiện tại làm gốc để tính toán
-    now= time.time()
+    # Nếu không truyền base_timestamp, dùng giá trị cố định
+    if base_timestamp is None:
+        base_timestamp = 1700000000  # Thời gian cố định (ví dụ: 2023-11-15)
+    
     for _ in range(n):
 
         #Tạo "địa chỉ ví" giả lập bằng cách thêm mã hex ngẫu nhiên
@@ -32,7 +27,7 @@ def generate_mock_transactions(n=10000):
             receiver = f"{random.choice(base_names)}_{suffix_receiver}"
         # Tạo mốc thời gian ngẫu nhiên lùi lại trong vòng 24 giờ qua (86400 giây)
         # Điều này giúp thời gian giao dịch thực tế hơn thay vì bị trùng lặp.
-        random_timestamp = now - random.uniform(0, 86400)
+        random_timestamp = base_timestamp - random.uniform(0, 86400)
 
         # Khởi tạo đối tượng Transaction với các thông số đã ngẫu nhiên hóa
         tx = Transaction(
