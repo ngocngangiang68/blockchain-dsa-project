@@ -15,9 +15,7 @@ class Transaction:
         # Phí giao dịch - tiêu chí để sắp xếp
         self.fee = fee
         # Thời gian tạo giao dịch:
-        # neu khong truyen timestamp thi moi lay thoi gian hien tai
-        #neu co truyen (tu ham fake data) thi lay gia tri do cho da dang
-        self.timestamp = timestamp if timestamp else time.time()
+        self.timestamp = timestamp if timestamp is not None else 1700000000 #time co dinh
 
         # Tạo mã định danh duy nhất (TXID) cho giao dịch:
         # Gom tất cả các thông tin biến đổi (người gửi, nhận, số tiền, phí và đặc biệt là thời gian)
