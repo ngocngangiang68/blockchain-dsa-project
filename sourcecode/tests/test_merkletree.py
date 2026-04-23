@@ -1,6 +1,9 @@
 import time
 import pytest
+import random
 from sourcecode.blockchain_dsa.merkle_tree import MerkleTree
+
+random.seed(42)
 
 def test_merkle_tree():
     # giả lập dữ liệu giao dịch
