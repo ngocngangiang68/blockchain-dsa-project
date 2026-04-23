@@ -1,8 +1,10 @@
 import time
+import random
 import copy
 from sourcecode.blockchain_dsa.test_data import MOCK_10000_TRANSACTIONS
 from sourcecode.blockchain_dsa.utils import compute_hash
 
+random.seed(42)
 
 def test_transaction_hashing():
     print("--- KIỂM TRA TÍNH DUY NHẤT VÀ HIỆU NĂNG HASH ---")
