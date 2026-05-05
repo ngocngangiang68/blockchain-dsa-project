@@ -314,3 +314,51 @@ if st.session_state.auto_refresh and st.session_state.block:
 
     time.sleep(1)
     st.rerun()
+# ================= SCALABILITY LAB =================
+st.markdown("---")
+st.markdown("### 🚀 Scalability Lab ($10^6$ TXs)")
+
+if st.session_state.block:
+    n = 1_000_000
+
+
+    # 1. Định nghĩa MockTX: Cấu trúc tối giản để thuật toán binary_search_steps
+    # có thể truy cập được thuộc tính .txid mà không gây lỗi.
+    class MockTX:
+        def __init__(self, txid):
+            self.txid = txid
+
+
+    # 2. Định nghĩa Virtual List: "Đánh lừa" thuật toán rằng đây là một mảng 1 triệu phần tử
+    # nhưng thực tế không tốn RAM vì nó không lưu trữ gì cả.
+    class VirtualTransactionList:
+        def __init__(self, size):
+            self.size = size
+
+        def __len__(self):
+            return self.size
+
+        def __getitem__(self, i):
+            # Khi thuật toán gọi arr[mid], nó sẽ tạo ra một object MockTX tạm thời tại đây
+            return MockTX(i)
+
+
+    # Khởi tạo danh sách ảo
+    virtual_data = VirtualTransactionList(n)
+    target_val = n - 1  # Giả định tìm phần tử cuối cùng
+
+    # 3. THỰC THI THUẬT TOÁN:
+    # Đây là lúc hàm binary_search_steps của bạn thực sự chạy trên 1 triệu đơn vị dữ liệu.
+    actual_bin_steps_1m = binary_search_steps(virtual_data, target_val)
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Simulation Size", "1,000,000 TXs")
+    m2.metric("Binary Steps (Actual)", actual_bin_steps_1m)
+    m3.metric("Linear Steps (Predicted)", f"{n:,}")
+
+    st.success(
+        st.success(
+            f"✅ **Scalability Confirmed**: The `binary_search_steps` algorithm was executed on a "
+            f"virtual list of 1,000,000 elements and returned results after {actual_bin_steps_1m} comparisons."
+        )
+    )
