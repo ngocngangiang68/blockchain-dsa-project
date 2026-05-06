@@ -10,6 +10,8 @@ from sourcecode.blockchain_dsa.block import Block
 from sourcecode.blockchain_dsa.merkle_utils import get_merkle_proof, verify_merkle_proof
 
 st.set_page_config(layout="wide", page_title="Blockchain Explorer")
+
+
 def binary_search_steps(arr, target):
     left, right = 0, len(arr) - 1
     steps = 0
@@ -24,11 +26,13 @@ def binary_search_steps(arr, target):
             right = mid - 1
     return steps
 
+
 def linear_search_steps(arr, target):
     for i, tx in enumerate(arr):
         if tx.txid == target:
             return i + 1
     return len(arr)
+
 
 # ================= HELPER =================
 def measure(func, repeat=50):
@@ -106,6 +110,7 @@ if st.sidebar.button("🚀 Generate Block"):
     st.session_state.perf["block_time"] = t1 - t0
     st.session_state.perf["sort_time"] = t_sort_end - t_sort_start
     st.sidebar.success(f"Done in {t1 - t0:.4f}s")
+
 # ================= DASHBOARD =================
 st.markdown("### 📊 Overview")
 
@@ -116,7 +121,7 @@ if st.session_state.block:
     col1, col2, col3, col4 = st.columns(4)
 
     col1.metric("Transactions", len(block.transactions))
-    col2.metric("Avg Fee", f"{sum(fees)/len(fees):.6f}")
+    col2.metric("Avg Fee", f"{sum(fees) / len(fees):.6f}")
     col3.metric("Block Hash", block.block_hash[:12] + "...")
     col4.metric("Merkle Root", block.merkle_root[:12] + "...")
 
@@ -133,7 +138,7 @@ if st.session_state.block:
     col1.metric("Total TX", len(block.transactions))
     col2.metric("Max Fee", f"{max(fees):.6f}")
     col3.metric("Min Fee", f"{min(fees):.6f}")
-    col4.metric("Avg Fee", f"{sum(fees)/len(fees):.6f}")
+    col4.metric("Avg Fee", f"{sum(fees) / len(fees):.6f}")
 
     st.markdown("### ⏱️ Performance")
 
@@ -150,33 +155,19 @@ if st.session_state.block:
 
     from sourcecode.blockchain_dsa.merkle_tree import compute_merkle_root
 
-    # ✅ Hàm measure ổn định hơn
-    def measure(func, repeat=20):
-        best_time = float('inf')
-        for _ in range(repeat):
-            start = time.perf_counter()
-            func()
-            elapsed = time.perf_counter() - start
-            if elapsed < best_time:
-                best_time = elapsed
-        return best_time
-
     # ✅ Chuẩn bị dữ liệu trước
     txs_sorted_by_id = sorted(block.transactions, key=lambda tx: tx.txid)
     sample_txid = txs_sorted_by_id[len(txs_sorted_by_id) // 2].txid
 
-    # ✅ Sort Mempool (Fee DESC) dùng Timsort
     sort_fee_time = measure(lambda: sorted(block.transactions, key=lambda tx: tx.fee, reverse=True))
-
-    # ✅ Sort ID (Timsort)
     sort_txid_time = measure(lambda: sorted(block.transactions, key=lambda tx: tx.txid))
 
-    # ✅ Merkle root cache
     if not hasattr(block, "cached_merkle_root"):
         block.cached_merkle_root = compute_merkle_root(block.transactions)
     merkle_time = measure(lambda: block.cached_merkle_root)
 
-    # ✅ Binary search trên list đã sort
+
+    # ✅ Sửa thụt lề cho binary search
     def binary_search_cached():
         left, right = 0, len(txs_sorted_by_id) - 1
         while left <= right:
@@ -189,15 +180,14 @@ if st.session_state.block:
                 right = mid - 1
         return None
 
-    search_time = measure(binary_search_cached)
-st.session_state.perf["search_time"] = search_time
 
-    # ✅ Merkle proof & verify cache
+    search_time = measure(binary_search_cached)
+    st.session_state.perf["search_time"] = search_time
+
     proof = get_merkle_proof(block.transactions, sample_txid)
     merkle_proof_time = measure(lambda: proof)
     verify_time = measure(lambda: verify_merkle_proof(sample_txid, proof, block.cached_merkle_root))
 
-    # Targets giữ nguyên
     data = [
         ["Sort Mempool (Fee DESC)", sort_fee_time, 0.05],
         ["Sort ID (MergeSort 4k)", sort_txid_time, 0.03],
@@ -216,34 +206,16 @@ st.session_state.perf["search_time"] = search_time
 
     st.dataframe(df_bench, use_container_width=True)
 
-    # ================= SEARCH COMPLEXITY =================
-    import math
-
-    st.markdown("### 🔍 Search Complexity Demo")
-    if st.session_state.block:
-        block = st.session_state.block
-        bin_steps = binary_search_steps(block.transactions, sample_txid)
-        lin_steps = linear_search_steps(block.transactions, sample_txid)
-        theoretical = int(math.log2(len(block.transactions)))
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Dataset Size", len(block.transactions))
-        col2.metric("Binary Steps", bin_steps)
-        col3.metric("Linear Steps", lin_steps)
-        st.info(f"Theoretical log2(n): {theoretical}")
-
 # ================= TABS =================
 tab1, tab2, tab3 = st.tabs(["📦 Transactions", "📈 Analytics", "🌳 Merkle"])
 
-# ===== TAB 1 =====
 with tab1:
     if st.session_state.block:
         block = st.session_state.block
-
         sort_type = st.selectbox("Sort", ["Fee DESC", "Fee ASC", "Time DESC", "Time ASC", "ID"])
         page = st.number_input("Page", 1, 100, 1)
 
         start = time.perf_counter()
-
         if sort_type == "Fee DESC":
             data = block.get_view_by_fee_desc(page)
         elif sort_type == "Fee ASC":
@@ -268,50 +240,40 @@ with tab1:
 
         if search_global:
             df = df[df["TXID"].str.contains(search_global[:6])]
-st.dataframe(df, use_container_width=True)
 
-# ===== TAB 2 =====
+        # ✅ Đưa st.dataframe vào trong khối IF
+        st.dataframe(df, use_container_width=True)
+
 with tab2:
     if st.session_state.block:
         fees = [tx.fee for tx in st.session_state.block.transactions]
         st.bar_chart(fees[:200])
 
-# ===== TAB 3 =====
 with tab3:
     if st.session_state.block:
         block = st.session_state.block
-
-        txid = st.text_input("Enter TXID")
-
+        txid_input = st.text_input("Enter TXID")
         if st.button("Generate Proof"):
-            t1 = time.perf_counter()
-            proof = get_merkle_proof(block.transactions, txid)
-            t2 = time.perf_counter()
-
-            if proof:
-                valid = verify_merkle_proof(txid, proof, block.merkle_root)
-                t3 = time.perf_counter()
-
-                st.success(f"Proof generated in {t2 - t1:.6f}s")
-                st.info(f"Verify: {valid} ({t3 - t2:.8f}s)")
+            t_p1 = time.perf_counter()
+            proof_obj = get_merkle_proof(block.transactions, txid_input)
+            t_p2 = time.perf_counter()
+            if proof_obj:
+                valid = verify_merkle_proof(txid_input, proof_obj, block.merkle_root)
+                st.success(f"Proof generated in {t_p2 - t_p1:.6f}s")
+                st.info(f"Verify: {valid} ({time.perf_counter() - t_p2:.8f}s)")
             else:
                 st.error("TX not found")
 
 # ================= REALTIME =================
 if st.session_state.auto_refresh and st.session_state.block:
     num = len(st.session_state.block.transactions)
-
-    txs = generate_mock_transactions(num)
-
-    mempool = Mempool()
-    mempool.add_transactions_bulk(txs)
-    mempool.sort_by_fee()
-
-    block = Block.create_from_mempool(mempool)
-    block.finalize()
-
-    st.session_state.block = block
-
+    txs_new = generate_mock_transactions(num)
+    mempool_new = Mempool()
+    mempool_new.add_transactions_bulk(txs_new)
+    mempool_new.sort_by_fee()
+    block_new = Block.create_from_mempool(mempool_new)
+    block_new.finalize()
+    st.session_state.block = block_new
     time.sleep(1)
     st.rerun()
 # ================= SCALABILITY LAB =================
