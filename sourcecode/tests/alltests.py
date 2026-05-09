@@ -3,7 +3,7 @@ import random
 import copy
 import sys
 import os
-
+import gc
 # Thiết lập đường dẫn để Python nhận diện được package sourcecode
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -173,7 +173,607 @@ def run_unified_tests():
 
 
 if __name__ == "__main__":
-    try:
-        run_unified_tests()
-    except Exception as e:
-        print(f"\n❌ DỪNG TEST DO LỖI: {e}")
+
+    import gc
+
+    TOTAL_RUNS = 100
+
+    # ==========================================
+    # THỐNG KÊ TỔNG
+    # ==========================================
+    pass_count = 0
+    fail_count = 0
+    failed_runs = []
+
+    total_times = []
+
+    # ==========================================
+    # NGƯỠNG ĐÁNH GIÁ
+    # ==========================================
+    LIMITS = {
+        "mempool_sort": 0.05,
+        "block_finalize": 0.03,
+        "binary_search": 0.0001,
+        "merkle_tree": 0.01,
+        "merkle_proof": 0.01,
+        "verify_proof": 0.0001
+    }
+
+    # ==========================================
+    # TOLERANCE CHỐNG NHIỄU CPU
+    # ==========================================
+    TOLERANCE = 1.10
+
+    # ==========================================
+    # THỐNG KÊ TỪNG CHỨC NĂNG
+    # ==========================================
+    stats = {
+        "Transaction & Hashing": {
+            "pass": 0,
+            "fail": 0
+        },
+        "Mempool & Block": {
+            "pass": 0,
+            "fail": 0,
+            "times": []
+        },
+        "Binary Search": {
+            "pass": 0,
+            "fail": 0,
+            "times": []
+        },
+        "Merkle Tree": {
+            "pass": 0,
+            "fail": 0,
+            "times": []
+        },
+        "Merkle Proof": {
+            "pass": 0,
+            "fail": 0,
+            "times": []
+        },
+        "Verify Proof": {
+            "pass": 0,
+            "fail": 0,
+            "times": []
+        },
+        "Cache & View": {
+            "pass": 0,
+            "fail": 0,
+            "times_first": [],
+            "times_second": []
+        }
+    }
+
+    print("\n" + "=" * 100)
+    print(f"{'CHẠY TEST 100 LẦN'.center(100)}")
+    print("=" * 100)
+
+    print("🔥 Warm-up hệ thống...")
+
+    # ==========================================
+    # WARM-UP
+    # ==========================================
+    for _ in range(5):
+
+        mempool = Mempool()
+
+        mempool.add_transactions_bulk(
+            MOCK_4000_TRANSACTIONS
+        )
+
+        mempool.sort_by_fee()
+
+        top_txs = (
+            mempool
+            .get_top_transactions(4000)
+        )
+
+        block = Block(top_txs)
+
+        block.finalize()
+
+        _ = block.search_by_txid(
+            block.transactions[100].txid
+        )
+
+        _ = get_merkle_proof(
+            block.transactions,
+            block.transactions[500].txid
+        )
+
+    print("✅ Warm-up hoàn tất\n")
+
+    gc.disable()
+
+    # ==========================================
+    # LOOP TEST
+    # ==========================================
+    for run in range(1, TOTAL_RUNS + 1):
+
+        print("\n" + "█" * 100)
+        print(f"🔁 LẦN TEST {run}/{TOTAL_RUNS}")
+        print("█" * 100)
+
+        try:
+
+            total_start = time.perf_counter()
+
+            # =========================================================
+            # 1. TRANSACTION TEST
+            # =========================================================
+            try:
+
+                txids = [
+                    tx.txid
+                    for tx in MOCK_10000_TRANSACTIONS
+                ]
+
+                assert len(txids) == len(set(txids))
+
+                original_tx = (
+                    MOCK_10000_TRANSACTIONS[0]
+                )
+
+                modified_tx = copy.deepcopy(
+                    original_tx
+                )
+
+                modified_tx.fee += 0.00000001
+
+                new_data = (
+                    f"{modified_tx.sender}"
+                    f"{modified_tx.receiver}"
+                    f"{modified_tx.amount}"
+                    f"{modified_tx.fee}"
+                    f"{modified_tx.timestamp}"
+                )
+
+                new_txid = compute_hash(
+                    new_data
+                )
+
+                assert (
+                    original_tx.txid
+                    != new_txid
+                )
+
+                stats[
+                    "Transaction & Hashing"
+                ]["pass"] += 1
+
+            except Exception:
+
+                stats[
+                    "Transaction & Hashing"
+                ]["fail"] += 1
+
+                raise
+
+            # =========================================================
+            # 2. MEMPOOL & BLOCK
+            # =========================================================
+            mempool = Mempool()
+
+            mempool.add_transactions_bulk(
+                MOCK_4000_TRANSACTIONS
+            )
+
+            start_sort = (
+                time.perf_counter()
+            )
+
+            mempool.sort_by_fee()
+
+            t_sort = (
+                time.perf_counter()
+                - start_sort
+            )
+
+            top_txs = (
+                mempool
+                .get_top_transactions(4000)
+            )
+
+            start_finalize = (
+                time.perf_counter()
+            )
+
+            block = Block(top_txs)
+
+            block.finalize()
+
+            t_finalize = (
+                time.perf_counter()
+                - start_finalize
+            )
+
+            stats[
+                "Mempool & Block"
+            ]["times"].append(
+                t_finalize
+            )
+
+            mempool_sort_ok = (
+                t_sort <
+                LIMITS["mempool_sort"]
+            )
+
+            block_finalize_ok = (
+                t_finalize <
+                LIMITS["block_finalize"]
+            )
+
+            mempool_pass = (
+                len(block.transactions) == 4000
+                and mempool_sort_ok
+                and block_finalize_ok
+            )
+
+            if mempool_pass:
+                stats[
+                    "Mempool & Block"
+                ]["pass"] += 1
+            else:
+                stats[
+                    "Mempool & Block"
+                ]["fail"] += 1
+
+            # =========================================================
+            # 3. BINARY SEARCH
+            # =========================================================
+            target_tx = (
+                block.transactions[1234]
+            )
+
+            target_id = (
+                target_tx.txid
+            )
+
+            start_search = (
+                time.perf_counter()
+            )
+
+            result_tx = (
+                block.search_by_txid(
+                    target_id
+                )
+            )
+
+            t_search = (
+                time.perf_counter()
+                - start_search
+            )
+
+            stats[
+                "Binary Search"
+            ]["times"].append(
+                t_search
+            )
+
+            binary_pass = (
+                result_tx is not None
+                and result_tx.txid == target_id
+                and t_search <
+                LIMITS[
+                    "binary_search"
+                ] * TOLERANCE
+            )
+
+            if binary_pass:
+                stats[
+                    "Binary Search"
+                ]["pass"] += 1
+            else:
+                stats[
+                    "Binary Search"
+                ]["fail"] += 1
+
+            # =========================================================
+            # 4. MERKLE TREE
+            # =========================================================
+            start_merkle = (
+                time.perf_counter()
+            )
+
+            root = (
+                block.merkle_root
+            )
+
+            t_merkle = (
+                time.perf_counter()
+                - start_merkle
+            )
+
+            stats[
+                "Merkle Tree"
+            ]["times"].append(
+                t_merkle
+            )
+
+            merkle_tree_pass = (
+                t_merkle <
+                LIMITS[
+                    "merkle_tree"
+                ] * TOLERANCE
+            )
+
+            if merkle_tree_pass:
+                stats[
+                    "Merkle Tree"
+                ]["pass"] += 1
+            else:
+                stats[
+                    "Merkle Tree"
+                ]["fail"] += 1
+
+            test_id = (
+                block.transactions[500]
+                .txid
+            )
+
+            # =========================================================
+            # MERKLE PROOF
+            # =========================================================
+            start_proof = (
+                time.perf_counter()
+            )
+
+            proof = (
+                get_merkle_proof(
+                    block.transactions,
+                    test_id
+                )
+            )
+
+            t_proof = (
+                time.perf_counter()
+                - start_proof
+            )
+
+            stats[
+                "Merkle Proof"
+            ]["times"].append(
+                t_proof
+            )
+
+            merkle_proof_pass = (
+                t_proof <
+                LIMITS[
+                    "merkle_proof"
+                ] * TOLERANCE
+            )
+
+            if merkle_proof_pass:
+                stats[
+                    "Merkle Proof"
+                ]["pass"] += 1
+            else:
+                stats[
+                    "Merkle Proof"
+                ]["fail"] += 1
+
+            # =========================================================
+            # VERIFY PROOF
+            # =========================================================
+            start_verify = (
+                time.perf_counter()
+            )
+
+            is_valid = (
+                verify_merkle_proof(
+                    test_id,
+                    proof,
+                    root
+                )
+            )
+
+            t_verify = (
+                time.perf_counter()
+                - start_verify
+            )
+
+            stats[
+                "Verify Proof"
+            ]["times"].append(
+                t_verify
+            )
+
+            verify_pass = (
+                is_valid
+                and
+                t_verify <
+                LIMITS[
+                    "verify_proof"
+                ] * TOLERANCE
+            )
+
+            if verify_pass:
+                stats[
+                    "Verify Proof"
+                ]["pass"] += 1
+            else:
+                stats[
+                    "Verify Proof"
+                ]["fail"] += 1
+
+            # =========================================================
+            # 5. CACHE & VIEW
+            # =========================================================
+            t1_start = (
+                time.perf_counter()
+            )
+
+            res1 = (
+                block.get_view_by_fee_desc(
+                    page=1,
+                    per_page=5
+                )
+            )
+
+            t_cache_1 = (
+                time.perf_counter()
+                - t1_start
+            )
+
+            t2_start = (
+                time.perf_counter()
+            )
+
+            res2 = (
+                block.get_view_by_fee_desc(
+                    page=1,
+                    per_page=5
+                )
+            )
+
+            t_cache_2 = (
+                time.perf_counter()
+                - t2_start
+            )
+
+            is_identical = all(
+                res1["data"][i].txid
+                ==
+                res2["data"][i].txid
+                for i in range(
+                    len(res1["data"])
+                )
+            )
+
+            stats[
+                "Cache & View"
+            ]["times_first"].append(
+                t_cache_1
+            )
+
+            stats[
+                "Cache & View"
+            ]["times_second"].append(
+                t_cache_2
+            )
+
+            cache_pass = (
+                is_identical
+                and
+                t_cache_2 <= t_cache_1
+            )
+
+            if cache_pass:
+                stats[
+                    "Cache & View"
+                ]["pass"] += 1
+            else:
+                stats[
+                    "Cache & View"
+                ]["fail"] += 1
+
+            # =========================================================
+            # PASS / FAIL TỔNG
+            # =========================================================
+            run_success = all([
+                mempool_pass,
+                binary_pass,
+                merkle_tree_pass,
+                merkle_proof_pass,
+                verify_pass,
+                cache_pass
+            ])
+
+            if run_success:
+                pass_count += 1
+            else:
+                fail_count += 1
+                failed_runs.append(run)
+
+            total_run_time = (
+                time.perf_counter()
+                - total_start
+            )
+
+            total_times.append(
+                total_run_time
+            )
+
+        except Exception as e:
+
+            fail_count += 1
+            failed_runs.append(run)
+
+            print(f"\n❌ FAIL - {e}")
+
+    gc.enable()
+
+    # =========================================================
+    # BẢNG THỐNG KÊ
+    # =========================================================
+    print("\n" + "=" * 110)
+    print(
+        "BẢNG THỐNG KÊ CHI TIẾT"
+        .center(110)
+    )
+    print("=" * 110)
+
+    print(
+        f"{'CHỨC NĂNG':<30}"
+        f"{'PASS':<10}"
+        f"{'FAIL':<10}"
+        f"{'TỶ LỆ PASS':<15}"
+        f"{'TGIAN TB (s)':<20}"
+    )
+
+    print("-" * 110)
+
+    for name, data in stats.items():
+
+        p = data.get("pass", 0)
+        f = data.get("fail", 0)
+
+        rate = (
+            p / TOTAL_RUNS
+        ) * 100
+
+        avg_time = 0
+
+        if "times" in data:
+            avg_time = (
+                sum(data["times"])
+                / len(data["times"])
+            ) if data["times"] else 0
+
+        elif "times_first" in data:
+            avg_time = (
+                sum(data["times_first"])
+                / len(data["times_first"])
+            ) if data[
+                "times_first"
+            ] else 0
+
+        print(
+            f"{name:<30}"
+            f"{p:<10}"
+            f"{f:<10}"
+            f"{rate:<14.2f}%"
+            f"{avg_time:<20.8f}"
+        )
+
+    print("=" * 110)
+
+    print("\nTỔNG KẾT CHUNG")
+    print("-" * 50)
+
+    print(f"✅ PASS: {pass_count}")
+    print(f"❌ FAIL: {fail_count}")
+
+    if failed_runs:
+        print(
+            f"⚠️ Failed Runs: "
+            f"{failed_runs}"
+        )
+    else:
+        print(
+            "🎉 Không có lần "
+            "test nào fail"
+        )
+
+    print("=" * 110)
