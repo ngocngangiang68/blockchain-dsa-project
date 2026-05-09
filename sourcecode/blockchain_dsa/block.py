@@ -23,16 +23,22 @@ class Block:
         return cls(top_4000_txs, prev_hash)
 
     def finalize(self):
-        """Đóng gói block hoàn chỉnh"""
-        # Tính merkle root dựa trên thứ tự ID cố định
-        self.merkle_root = compute_merkle_root(self.transactions)
+        """
+        Finalize block:
+        - Sort transaction theo TXID
+        """
 
-        # Tính block hash
-        block_data = f"{self.prev_hash}{self.merkle_root}{self.timestamp}"
-        self.block_hash = compute_hash(block_data)
+        self.transactions.sort(
+            key=lambda tx: tx.txid
+        )
+
+        # cache txid cho binary search
+        self._txids = [
+            tx.txid
+            for tx in self.transactions
+        ]
 
         return self
-
     def verify_integrity(self):
         # Tính toán lại hash dựa trên dữ liệu hiện tại trong object
         actual_hash = self.compute_block_hash()
