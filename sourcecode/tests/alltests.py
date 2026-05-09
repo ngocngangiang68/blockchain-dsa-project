@@ -616,6 +616,7 @@ if __name__ == "__main__":
                 - t1_start
             )
 
+
             t2_start = (
                 time.perf_counter()
             )
