@@ -1,3 +1,11 @@
+import sys
+import os
+
+sys.path.append(
+    os.path.abspath(
+        os.path.dirname(__file__)
+    )
+)
 import streamlit as st
 import pandas as pd
 import time
@@ -74,7 +82,8 @@ if "perf" not in st.session_state:
     }
 if "auto_refresh" not in st.session_state:
     st.session_state.auto_refresh = False
-
+# FIX NameError: perf
+perf = st.session_state.perf
 # ================= HEADER =================
 col1, col2 = st.columns([3, 2])
 with col1:
@@ -86,22 +95,61 @@ with col2:
 st.sidebar.title(" ⚙️  Control")
 num_tx = st.sidebar.slider("Transactions", 1000, 4000)
 if st.sidebar.button(" 🚀  Generate Block"):
+
     t0 = time.perf_counter()
-    random.seed(42)  # Cố định seed để khớp với logic utils mới [cite: 81]
-    full_txs = generate_mock_transactions(n=10000)
-    txs = full_txs[:num_tx]
+
+    random.seed(42)
+
+    full_txs = generate_mock_transactions(
+        n=10000
+    )
+
     mempool = Mempool()
-    mempool.add_transactions_bulk(txs)
+
+    mempool.add_transactions_bulk(
+        full_txs
+    )
+
+    # đo thời gian sort fee
     t_sort_start = time.perf_counter()
+
     mempool.sort_by_fee()
+
+    selected_txs = (
+        mempool
+        .get_top_transactions(
+            num_tx
+        )
+    )
+
     t_sort_end = time.perf_counter()
-    block = Block.create_from_mempool(mempool)
+
+    # tạo block từ top transactions
+    block = Block(
+        selected_txs
+    )
+
     block.finalize()
+
     t1 = time.perf_counter()
+
     st.session_state.block = block
-    st.session_state.perf["block_time"] = t1 - t0
-    st.session_state.perf["sort_time"] = t_sort_end - t_sort_start
-    st.sidebar.success(f"Done in {t1 - t0:.4f}s")
+
+    st.session_state.perf[
+        "block_time"
+    ] = t1 - t0
+
+    st.session_state.perf[
+        "sort_time"
+    ] = (
+        t_sort_end
+        - t_sort_start
+    )
+
+    st.sidebar.success(
+        f"Done in "
+        f"{t1 - t0:.4f}s"
+    )
 
 # ================= DASHBOARD =================
 st.markdown("###  📊  Overview")
@@ -111,9 +159,26 @@ if st.session_state.block:
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Transactions", len(block.transactions))
     col2.metric("Avg Fee", f"{sum(fees) / len(fees):.6f}")
-    col3.metric("Block Hash", block.block_hash[:12] + "...")
-    col4.metric("Merkle Root", block.merkle_root[:12] + "...")
+    col3.metric(
+        "Block Hash",
+        (
+                block.block_hash[:12]
+                + "..."
+        )
+        if block.block_hash
+        else "N/A"
+    )
 
+
+    col4.metric(
+        "Merkle Root",
+        (
+                block.merkle_root[:12]
+                + "..."
+        )
+        if block.merkle_root
+        else "N/A"
+    )
 # ================= SYSTEM =================
 st.markdown("###  ⚡  System Dashboard")
 if st.session_state.block:
@@ -127,10 +192,22 @@ if st.session_state.block:
     col4.metric("Avg Fee", f"{sum(fees) / len(fees):.6f}")
 st.markdown("###  ⏱️  Performance")
 p1, p2, p3 = st.columns(3)
-p1.metric("Block Time", f"{perf['block_time']:.8f}s")
-p2.metric("Sort Time", f"{perf['sort_time']:.8f}s")
-p3.metric("Search Time", f"{perf['search_time']:.10f}s")
+perf = st.session_state.perf
 
+p1.metric(
+    "Block Time",
+    f"{perf['block_time']:.8f}s"
+)
+
+p2.metric(
+    "Sort Time",
+    f"{perf['sort_time']:.8f}s"
+)
+
+p3.metric(
+    "Search Time",
+    f"{perf['search_time']:.10f}s"
+)
 # ================= PERFORMANCE BENCHMARK =================
 st.markdown("###  📋  Performance Benchmark")
 if st.session_state.block:
@@ -165,6 +242,19 @@ if st.session_state.block:
     proof = get_merkle_proof(block.transactions, sample_txid)
     merkle_proof_time = measure(lambda: proof)
     verify_time = measure(lambda: verify_merkle_proof(sample_txid, proof, block.cached_merkle_root))
+    # Thêm để ổn đinh hơn
+    cached_root = (
+        block.cached_merkle_root
+    )
+
+    verify_time = measure(
+        lambda:
+        verify_merkle_proof(
+            sample_txid,
+            proof,
+            cached_root
+        )
+    )
     data = [
         ["Sort Mempool (Fee DESC)", sort_fee_time, 0.05],
         ["Sort ID (MergeSort 4k)", sort_txid_time, 0.03],
