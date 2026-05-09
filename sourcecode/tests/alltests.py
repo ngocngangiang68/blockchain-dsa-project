@@ -345,6 +345,7 @@ def run_unified_tests():
         0.03
     )
 
+
     print_report(
         "Block Finalize",
         block_stats

@@ -169,6 +169,7 @@ if st.session_state.block:
         else "N/A"
     )
 
+
     col4.metric(
         "Merkle Root",
         (

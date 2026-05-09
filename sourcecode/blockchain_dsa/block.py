@@ -28,6 +28,7 @@ class Block:
         - Sort transaction theo TXID
         """
 
+
         self.transactions.sort(
             key=lambda tx: tx.txid
         )

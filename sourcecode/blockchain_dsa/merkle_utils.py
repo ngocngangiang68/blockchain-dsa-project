@@ -111,6 +111,7 @@ def verify_merkle_proof(
                 + current
             )
 
+
     return (
         current
         == merkle_root
