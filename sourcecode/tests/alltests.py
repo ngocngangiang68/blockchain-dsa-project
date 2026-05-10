@@ -133,6 +133,7 @@ def run_unified_tests():
         id2 = res2['data'][i].txid[:30] + "..."
         print(f"{i + 1:<5} | {id1:<35} | {id2:<35}")
 
+
     is_identical = all(res1['data'][i].txid == res2['data'][i].txid for i in range(len(res1['data'])))
     if is_identical:
         print("\n✅ XÁC NHẬN: Giao dịch hoàn toàn cố định và chính xác giữa các lần truy xuất!")
