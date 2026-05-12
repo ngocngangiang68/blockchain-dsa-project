@@ -126,7 +126,7 @@ def run_system_scalability_test():
     assert is_identical
 
     print("\n" + "=" * 80)
-    print("KẾT LUẬN: HOÀN THÀNH)")
+    print("KẾT LUẬN: HỆ THỐNG ĐÃ VƯỢT QUA KIỂM THỬ SCALABILITY")
     print("=" * 80)
 
 if __name__ == "__main__":
