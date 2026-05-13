@@ -178,8 +178,10 @@ if st.session_state.block:
     )
 
     sample_txid = txs_sorted_by_id[
+
         len(txs_sorted_by_id) // 2
     ].txid
+
 
 
 
