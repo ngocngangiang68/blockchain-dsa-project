@@ -421,18 +421,273 @@ with tab2:
 with tab3:
     if st.session_state.block:
         block = st.session_state.block
-        txid_input = st.text_input("Enter TXID")
-        if st.button("Generate Proof"):
-            t_p1 = time.perf_counter()
-            proof_obj = get_merkle_proof(block.transactions, txid_input)
-            t_p2 = time.perf_counter()
-            if proof_obj:
-                valid = verify_merkle_proof(txid_input, proof_obj, block.merkle_root)
-                st.success(f"Proof generated in {t_p2 - t_p1:.6f}s")
-                st.info(f"Verify: {valid} ({time.perf_counter() - t_p2:.8f}s)")
-            else:
-                st.error("TX not found")
 
+        st.markdown("### 🌳 Merkle Proof & Verification")
+
+        txid_input = st.text_input(
+            "Enter TXID to verify"
+        )
+
+        col1, col2 = st.columns(2)
+
+        # =====================================
+        # LEFT SIDE: GENERATE PROOF
+        # =====================================
+        with col1:
+
+            st.markdown(
+                "#### Generate Merkle Proof"
+            )
+
+            if st.button(
+                "Generate Proof"
+            ):
+
+                start_time = (
+                    time.perf_counter()
+                )
+
+                proof_obj = (
+                    get_merkle_proof(
+                        block.transactions,
+                        txid_input
+                    )
+                )
+
+                generate_time = (
+                    time.perf_counter()
+                    - start_time
+                )
+
+                if proof_obj:
+
+                    # lưu state
+                    st.session_state[
+                        "proof_obj"
+                    ] = proof_obj
+
+                    st.session_state[
+                        "txid_input"
+                    ] = txid_input
+
+                    st.success(
+                        f"✅ Proof generated "
+                        f"in "
+                        f"{generate_time:.8f}s"
+                    )
+
+                    st.write(
+                        "**Merkle Root "
+                        "(Header):**"
+                    )
+
+                    st.code(
+                        block.merkle_root
+                    )
+
+                    st.write(
+                        f"**Proof Length:** "
+                        f"{len(proof_obj)} "
+                        f"hashes"
+                    )
+
+                else:
+
+                    st.error(
+                        "❌ Transaction "
+                        "not found"
+                    )
+
+        # =====================================
+        # RIGHT SIDE: VERIFY
+        # =====================================
+        with col2:
+
+            st.markdown(
+                "#### Verify Transaction"
+            )
+
+            if st.button("Verify"):
+
+                if (
+                    "proof_obj"
+                    not in st.session_state
+                ):
+
+                    st.warning(
+                        "⚠️ Please "
+                        "generate proof "
+                        "first"
+                    )
+
+                else:
+
+                    proof_obj = (
+                        st.session_state[
+                            "proof_obj"
+                        ]
+                    )
+
+                    txid_saved = (
+                        st.session_state[
+                            "txid_input"
+                        ]
+                    )
+
+                    verify_start = (
+                        time.perf_counter()
+                    )
+
+                    result = (
+                        verify_merkle_proof(
+                            txid_saved,
+                            proof_obj,
+                            block.merkle_root
+                        )
+                    )
+
+                    verify_time = (
+                        time.perf_counter()
+                        - verify_start
+                    )
+
+                    st.write(
+                        "**Verification "
+                        "Process**"
+                    )
+
+                    st.write(
+                        f"**TXID:** "
+                        f"`{txid_saved}`"
+                    )
+
+                    st.write(
+                        f"**Verify Time:** "
+                        f"`{verify_time:.8f}s`"
+                    )
+
+                    st.write(
+                        "**Compare With "
+                        "Merkle Root:**"
+                    )
+
+                    st.code(
+                        block.merkle_root
+                    )
+
+                    if result:
+
+                        st.success(
+                            "✅ Transaction "
+                            "hợp lệ và "
+                            "tồn tại trong "
+                            "block!"
+                        )
+
+                    else:
+
+                        st.error(
+                            "❌ Giao dịch "
+                            "giả mạo hoặc "
+                            "không tồn tại!"
+                        )
+
+        # =====================================
+        # BINARY SEARCH
+        # =====================================
+        st.markdown("---")
+        st.markdown(
+            "### 🔎 Binary Search TXID"
+        )
+
+        if st.button(
+            "Binary Search TXID"
+        ):
+
+            txs_sorted = sorted(
+                block.transactions,
+                key=lambda tx: tx.txid
+            )
+
+            left = 0
+            right = (
+                len(txs_sorted) - 1
+            )
+
+            found = False
+            position = -1
+            steps = 0
+
+            search_start = (
+                time.perf_counter()
+            )
+
+            while left <= right:
+
+                steps += 1
+
+                mid = (
+                    left + right
+                ) // 2
+
+                current_txid = (
+                    txs_sorted[mid].txid
+                )
+
+                if (
+                    current_txid
+                    == txid_input
+                ):
+
+                    found = True
+                    position = mid
+                    break
+
+                elif (
+                    current_txid
+                    < txid_input
+                ):
+
+                    left = mid + 1
+
+                else:
+                    right = mid - 1
+
+            search_time = (
+                time.perf_counter()
+                - search_start
+            )
+
+            st.write(
+                f"**Transaction "
+                f"Exists:** "
+                f"{'✅ Yes' if found else '❌ No'}"
+            )
+
+            st.write(
+                f"**Search Time:** "
+                f"`{search_time:.10f}s`"
+            )
+
+            if found:
+
+                st.write(
+                    f"**Position "
+                    f"in Block:** "
+                    f"`{position}`"
+                )
+
+            else:
+
+                st.write(
+                    "**Position "
+                    "in Block:** N/A"
+                )
+
+            st.write(
+                f"**Steps Used:** "
+                f"`{steps}`"
+            )
 # ================= REALTIME =================
 if st.session_state.auto_refresh and st.session_state.block:
     num = len(st.session_state.block.transactions)
