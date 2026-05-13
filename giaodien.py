@@ -181,6 +181,7 @@ if st.session_state.block:
         len(txs_sorted_by_id) // 2
     ].txid
 
+
     # ==========================================
     # [1] SORT BY FEE (BEST CASE)
     # ==========================================
